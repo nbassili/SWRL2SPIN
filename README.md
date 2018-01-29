@@ -23,7 +23,7 @@ RUN
 Double-click swrl2spin.pl from windows explorer or load SWI-Prolog and consult this file.
 Then use at the Prolog prompt:
 
-?- swrl2spin(<Ontology File>).
+?- swrl2spin(<<Ontology File>>).
 
 to translate the ontology that contains SWRL rules into an ontology with SPIN rules.
 
