@@ -1,0 +1,197 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE rdf:RDF [
+    <!ENTITY ns1 'http://www.owl-ontologies.com/Ontology1514554190.owl#'>
+    <!ENTITY owl 'http://www.w3.org/2002/07/owl#'>
+    <!ENTITY rdf 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+    <!ENTITY rdfs 'http://www.w3.org/2000/01/rdf-schema#'>
+    <!ENTITY sp 'http://spinrdf.org/sp#'>
+    <!ENTITY spin 'http://spinrdf.org/spin#'>
+    <!ENTITY swrl 'http://www.w3.org/2003/11/swrl#'>
+    <!ENTITY xsd 'http://www.w3.org/2001/XMLSchema#'>
+]>
+
+<rdf:RDF
+    xmlns:ns1="&ns1;"
+    xmlns:owl="&owl;"
+    xmlns:rdf="&rdf;"
+    xmlns:rdfs="&rdfs;"
+    xmlns:sp="&sp;"
+    xmlns:spin="&spin;"
+    xmlns:swrl="&swrl;"
+    xmlns:xsd="&xsd;"
+>
+<owl:DatatypeProperty rdf:about="&ns1;lastName">
+  <rdfs:domain rdf:resource="&ns1;Person"/>
+  <rdfs:range rdf:resource="&xsd;string"/>
+</owl:DatatypeProperty>
+
+<owl:DatatypeProperty rdf:about="&ns1;firstName">
+  <rdfs:domain rdf:resource="&ns1;Person"/>
+  <rdfs:range rdf:resource="&xsd;string"/>
+</owl:DatatypeProperty>
+
+<owl:ObjectProperty rdf:about="&ns1;isTaughtBy">
+  <rdfs:domain rdf:resource="&ns1;Course"/>
+  <rdfs:range rdf:resource="&ns1;Professor"/>
+</owl:ObjectProperty>
+
+<ns1:Course rdf:about="&ns1;prolog">
+  <ns1:isTaughtBy rdf:resource="&ns1;nbassili"/>
+</ns1:Course>
+
+<owl:Class rdf:about="&ns1;Person"/>
+
+<swrl:Variable rdf:about="&ns1;a"/>
+
+<owl:Ontology rdf:about="http://www.owl-ontologies.com/Ontology1514554190.owl">
+  <owl:imports rdf:resource="http://spinrdf.org/sp"/>
+  <owl:imports rdf:resource="http://spinrdf.org/spif"/>
+  <owl:imports rdf:resource="http://spinrdf.org/spin"/>
+  <owl:imports rdf:resource="http://spinrdf.org/spl"/>
+  <owl:imports rdf:resource="http://sqwrl.stanford.edu/ontologies/built-ins/3.4/sqwrl.owl"/>
+  <owl:imports rdf:resource="http://swrl.stanford.edu/ontologies/3.3/swrla.owl"/>
+</owl:Ontology>
+
+<owl:DatatypeProperty rdf:about="&ns1;fullName">
+  <rdfs:domain rdf:resource="&ns1;Person"/>
+  <rdfs:range rdf:resource="&xsd;string"/>
+</owl:DatatypeProperty>
+
+<owl:ObjectProperty rdf:about="&ns1;knows">
+  <rdfs:domain rdf:resource="&ns1;Person"/>
+  <rdfs:range rdf:resource="&ns1;Person"/>
+</owl:ObjectProperty>
+
+<owl:Class rdf:about="&ns1;Student">
+  <spin:rule>
+    <sp:Construct>
+      <sp:templates rdf:parseType="Collection">
+
+        <rdf:Description>
+          <sp:object>
+            <rdf:Description>
+              <sp:varName rdf:datatype="&xsd;string">z</sp:varName>
+            </rdf:Description>
+          </sp:object>
+          <sp:predicate rdf:resource="&ns1;knows"/>
+          <sp:subject rdf:resource="&spin;_this"/>
+        </rdf:Description>
+      </sp:templates>
+      <sp:text rdf:datatype="&xsd;string">CONSTRUCT { ?this http://www.owl-ontologies.com/Ontology1514554190.owl#knows ?z . } WHERE { ?this http://www.owl-ontologies.com/Ontology1514554190.owl#attends ?y . ?y http://www.owl-ontologies.com/Ontology1514554190.owl#isTaughtBy ?z . }</sp:text>
+      <sp:where rdf:parseType="Collection">
+
+        <rdf:Description>
+          <sp:object>
+            <rdf:Description>
+              <sp:varName rdf:datatype="&xsd;string">y</sp:varName>
+            </rdf:Description>
+          </sp:object>
+          <sp:predicate rdf:resource="&ns1;attends"/>
+          <sp:subject rdf:resource="&spin;_this"/>
+        </rdf:Description>
+
+        <rdf:Description>
+          <sp:object>
+            <rdf:Description>
+              <sp:varName rdf:datatype="&xsd;string">z</sp:varName>
+            </rdf:Description>
+          </sp:object>
+          <sp:predicate rdf:resource="&ns1;isTaughtBy"/>
+          <sp:subject>
+            <rdf:Description>
+              <sp:varName rdf:datatype="&xsd;string">y</sp:varName>
+            </rdf:Description>
+          </sp:subject>
+        </rdf:Description>
+      </sp:where>
+    </sp:Construct>
+  </spin:rule>
+  <rdfs:subClassOf rdf:resource="&ns1;Person"/>
+</owl:Class>
+
+<owl:Class rdf:about="&ns1;Professor">
+  <rdfs:subClassOf rdf:resource="&ns1;Person"/>
+</owl:Class>
+
+<owl:Class rdf:about="&ns1;Course">
+  <spin:rule>
+    <sp:Construct>
+      <sp:templates rdf:parseType="Collection">
+
+        <rdf:Description>
+          <sp:object>
+            <rdf:Description>
+              <sp:varName rdf:datatype="&xsd;string">z</sp:varName>
+            </rdf:Description>
+          </sp:object>
+          <sp:predicate rdf:resource="&ns1;knows"/>
+          <sp:subject>
+            <rdf:Description>
+              <sp:varName rdf:datatype="&xsd;string">x</sp:varName>
+            </rdf:Description>
+          </sp:subject>
+        </rdf:Description>
+      </sp:templates>
+      <sp:text rdf:datatype="&xsd;string">CONSTRUCT { ?x http://www.owl-ontologies.com/Ontology1514554190.owl#knows ?z . } WHERE { ?this http://www.owl-ontologies.com/Ontology1514554190.owl#isTaughtBy ?z . ?x http://www.owl-ontologies.com/Ontology1514554190.owl#attends ?this . ?x rdf:type/(rdfs:subClassOf)* http://www.owl-ontologies.com/Ontology1514554190.owl#Student . }</sp:text>
+      <sp:where rdf:parseType="Collection">
+
+        <rdf:Description>
+          <sp:object>
+            <rdf:Description>
+              <sp:varName rdf:datatype="&xsd;string">z</sp:varName>
+            </rdf:Description>
+          </sp:object>
+          <sp:predicate rdf:resource="&ns1;isTaughtBy"/>
+          <sp:subject rdf:resource="&spin;_this"/>
+        </rdf:Description>
+
+        <rdf:Description>
+          <sp:object rdf:resource="&spin;_this"/>
+          <sp:predicate rdf:resource="&ns1;attends"/>
+          <sp:subject>
+            <rdf:Description>
+              <sp:varName rdf:datatype="&xsd;string">x</sp:varName>
+            </rdf:Description>
+          </sp:subject>
+        </rdf:Description>
+
+        <sp:TriplePath>
+          <sp:object rdf:resource="&ns1;Student"/>
+          <sp:path>
+            <sp:SeqPath>
+              <sp:path1 rdf:resource="&rdf;type"/>
+              <sp:path2>
+                <sp:ModPath>
+                  <sp:modMax rdf:datatype="&xsd;integer">-2</sp:modMax>
+                  <sp:modMin rdf:datatype="&xsd;integer">0</sp:modMin>
+                  <sp:subPath rdf:resource="&rdfs;subClassOf"/>
+                </sp:ModPath>
+              </sp:path2>
+            </sp:SeqPath>
+          </sp:path>
+          <sp:subject>
+            <rdf:Description>
+              <sp:varName rdf:datatype="&xsd;string">x</sp:varName>
+            </rdf:Description>
+          </sp:subject>
+        </sp:TriplePath>
+      </sp:where>
+    </sp:Construct>
+  </spin:rule>
+</owl:Class>
+
+<owl:ObjectProperty rdf:about="&ns1;attends">
+  <rdfs:domain rdf:resource="&ns1;Student"/>
+  <rdfs:range rdf:resource="&ns1;Course"/>
+</owl:ObjectProperty>
+
+<ns1:Professor rdf:about="&ns1;nbassili">
+  <ns1:firstName rdf:datatype="&xsd;string">Nick</ns1:firstName>
+  <ns1:lastName rdf:datatype="&xsd;string">Bassiliades</ns1:lastName>
+</ns1:Professor>
+
+<ns1:Student rdf:about="&ns1;john">
+  <ns1:attends rdf:resource="&ns1;prolog"/>
+</ns1:Student>
+
+</rdf:RDF>

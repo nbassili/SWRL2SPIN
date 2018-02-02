@@ -1,15 +1,15 @@
 /************************************************************************
- SWRL2SPIN 
+ SWRL2SPIN
  A tool for translating SWRL rules into SPIN rules
- 
+
  by Dr. Nick Bassiliades, Associate Professor
  Department of Informatics, Aristotle University of Thessaloniki, Greece
- 
+
  email: nbassili@csd.auth.gr
  URL: http://tinyURL.com/bassiliades
- 
+
  All right reserved - Please contact for details
-*************************************************************************/ 
+*************************************************************************/
 
 %:- use_module(library(semweb/rdf_db)).
 :- use_module(library(semweb/rdf11)).
@@ -19,7 +19,7 @@
 :- rdf_register_prefix(spif, 'http://spinrdf.org/spif#').
 :- rdf_register_prefix(xsd, 'http://www.w3.org/2001/XMLSchema#').
 :- rdf_register_prefix(arg, 'http://spinrdf.org/arg#').
-
+:- dynamic option/2.
 
 %:- load_rdf('univ-with-SWRL.owl', Triples), writelist(Triples), nl.
 
@@ -28,9 +28,19 @@
 
 
 swrl2spin(OntoFile) :-
-	swrl2spin(OntoFile,1).
+	swrl2spin(OntoFile,1,[]).
 
 swrl2spin(OntoFile,N) :-
+	integer(N),
+	swrl2spin(OntoFile,N,[]).
+swrl2spin(OntoFile,Options) :-
+	is_list(Options),
+	swrl2spin(OntoFile,1,Options).
+
+swrl2spin(OntoFile,N,Options) :-
+	integer(N),
+	is_list(Options), !,
+	assert_options(Options),
 	rdf_reset_db,
 	rdf_load(OntoFile,[register_namespaces(true)]),
 	findall(R, rdf(R,rdf:type,swrl:'Imp'), Rules),
@@ -47,10 +57,22 @@ swrl2spin(OntoFile,N) :-
 	rdf_assert(OntoURI,owl:imports,'http://spinrdf.org/sp'),
 	rdf_assert(OntoURI,owl:imports,'http://spinrdf.org/spl'),
 	atom_concat('OUT-',OntoFile,OutOntoFile),
-	rdf_save(OutOntoFile,[]).
+	rdf_save(OutOntoFile,[]),
+	retract_options.
+swrl2spin(_,_,_) :-
+	writeln('Wrong arguments!').
+
+assert_options([]) :- !.
+assert_options([Option|Rest]) :-
+	Option =.. [Opt,Arg],
+	assert(option(Opt,Arg)),
+	assert_options(Rest).
+
+retract_options :-
+	retractall(option(_,_)).
 
 multiply_rules(Rules,1,Rules) :- !.
-multiply_rules(Rules,N,RulesN) :- 
+multiply_rules(Rules,N,RulesN) :-
 	N > 1,
 	multiply_rules_aux(Rules,N,NewRules),
 	N1 is N - 1,
@@ -65,23 +87,6 @@ multiply_rules_aux([Rule|RestRules],N,[NewRule|RestNewRules]) :-
 	rdf_assert(NewRule,swrl:head,Head),
 	rdf_assert(NewRule,swrl:body,Body),
 	multiply_rules_aux(RestRules,N,RestNewRules).
-
-swrl2spin_mult(OntoFile,N) :-
-	rdf_reset_db,
-	rdf_load(OntoFile,[register_namespaces(true)]),
-	findall(R, rdf(R,rdf:type,swrl:'Imp'), Rules),
-	time(translate_rules(Rules,_SPINRules,_TrRules)),
-	%writelist(SPINRules), nl,
-	%writelist(TrRules),
-	rdf(OntoURI,rdf:type,owl:'Ontology'),
-	rdf_assert(OntoURI,owl:imports,'http://spinrdf.org/spif'),
-	rdf_assert(OntoURI,owl:imports,'http://spinrdf.org/spin'),
-	rdf_assert(OntoURI,owl:imports,'http://spinrdf.org/sp'),
-	rdf_assert(OntoURI,owl:imports,'http://spinrdf.org/spl'),
-	duplicate_instance('http://www.owl-ontologies.com/Ontology1514554190.owl#john',N),
-	atomic_list_concat(['OUT-',N,'-',OntoFile],OutOntoFile),
-	rdf_save(OutOntoFile,[]).
-
 
 translate_rules([],[],[]).
 translate_rules([Rule|RestRules],AllSPINRules,AllTrRules) :-
@@ -142,7 +147,7 @@ translate_one_rule_one_this(This,ThisClass,Head,Body,SPINRule,TrRuleStr) :-
 translate_head(Head,SPINHead,TransHead,This) :-
 	translate_atom_list(head,Head,This,SPINHead,TrAL),
 	append([['CONSTRUCT','{'],TrAL,['}']],TransHead).
-	
+
 translate_body(Body,SPINBody,TransBody,This) :-
 	translate_atom_list(body,Body,This,SPINBody,TrAL),
 	append([['WHERE','{'],TrAL,['}']],TransBody).
@@ -213,7 +218,7 @@ re_order_atom_list_all(Mode,SPINPrologAtomListIn,TrAtomListIn,SPINPrologAtomList
 re_order_atom_list_all(_Mode,SPINPrologAtomList,TrAtomList,SPINPrologAtomList,TrAtomList).
 
 %% TODO: Check if optimization is performed in all cases
-re_order_atom_list(body,SPINPrologAtomListIn,TrAtomListIn,SPINPrologAtomList,TrAtomList) :- 
+re_order_atom_list(body,SPINPrologAtomListIn,TrAtomListIn,SPINPrologAtomList,TrAtomList) :-
 	nth1(Pos1,TrAtomListIn,[Arg11,_Pred1,Arg21,'.']),
 	%(is_var(Arg11); is_var(Arg21)), Arg11\=='?this', Arg21\=='?this',
 	is_var(Arg11), Arg11 \== '?this', Arg21 \== '?this',
@@ -221,7 +226,7 @@ re_order_atom_list(body,SPINPrologAtomListIn,TrAtomListIn,SPINPrologAtomList,TrA
 	((Arg12 == Arg11, Arg22=='?this');(Arg12 == '?this', Arg22 == Arg11)), !,
 	swap(Pos1,Pos2,TrAtomListIn,TrAtomList),
 	swap(Pos1,Pos2,SPINPrologAtomListIn,SPINPrologAtomList).
-re_order_atom_list(body,SPINPrologAtomListIn,TrAtomListIn,SPINPrologAtomList,TrAtomList) :- 
+re_order_atom_list(body,SPINPrologAtomListIn,TrAtomListIn,SPINPrologAtomList,TrAtomList) :-
 	nth1(Pos1,TrAtomListIn,[Arg11,_Pred1,Arg21,'.']),
 	%(is_var(Arg11); is_var(Arg21)), Arg11\=='?this', Arg21\=='?this',
 	is_var(Arg21), Arg21 \== '?this', Arg11\=='?this',
@@ -230,7 +235,7 @@ re_order_atom_list(body,SPINPrologAtomListIn,TrAtomListIn,SPINPrologAtomList,TrA
 	swap(Pos1,Pos2,TrAtomListIn,TrAtomList),
 	swap(Pos1,Pos2,SPINPrologAtomListIn,SPINPrologAtomList).
 /* TODO here*/
-re_order_atom_list(body,SPINPrologAtomListIn,TrAtomListIn,SPINPrologAtomList,TrAtomList) :- 
+re_order_atom_list(body,SPINPrologAtomListIn,TrAtomListIn,SPINPrologAtomList,TrAtomList) :-
 	rank_triples(TrAtomListIn,RankedTrAtomListIn,_UnRankedTrAtomListIn), !,
 	%length(TrAtomListIn,Length1),
 	%length(RankedTrAtomListIn,Length2),
@@ -322,15 +327,40 @@ BuiltinAtom
 translate_atom(body,Atom,This,[],[]) :-
 	rdf(Atom,rdf:type,swrl:'ClassAtom'),
 	rdf(Atom,swrl:argument1,This), !.
-translate_atom(_Mode,Atom,This,SPINAtom,[TrArg,a,Class,'.']) :-
-	rdf(Atom,rdf:type,swrl:'ClassAtom'), !,
+translate_atom(Mode,Atom,This,SPINAtom,[TrArg,a,Class,'.']) :-
+	rdf(Atom,rdf:type,swrl:'ClassAtom'),
+	(Mode = head ; (Mode = body, not(option(subclass,true)))),	!,
 	rdf(Atom,swrl:classPredicate,Class),
 	rdf(Atom,swrl:argument1,Arg),
 	translate_argument(Arg,This,SPINArg,TrArg),
 	rdf_create_bnode(SPINAtom),
 	rdf_assert(SPINAtom,sp:subject,SPINArg),
 	rdf_assert(SPINAtom,sp:predicate,rdf:type),
-	rdf_assert(SPINAtom,sp:object,Class).	
+	rdf_assert(SPINAtom,sp:object,Class).
+% Optionally translate classAtom to rdf:type/(rdfs:subClassOf)* in order to avoid using reasoner
+% Use subclass(true) in the options
+translate_atom(body,Atom,This,SPINAtom,[TrArg,'rdf:type/(rdfs:subClassOf)*',Class,'.']) :-
+		rdf(Atom,rdf:type,swrl:'ClassAtom'), !,
+		rdf(Atom,swrl:classPredicate,Class),
+		rdf(Atom,swrl:argument1,Arg),
+		translate_argument(Arg,This,SPINArg,TrArg),
+		rdf_create_bnode(SPINAtom),
+		rdf_global_id(sp:'TriplePath',ExprURI1),
+		rdf_assert(SPINAtom,rdf:type,ExprURI1),
+		rdf_assert(SPINAtom,sp:subject,SPINArg),
+		rdf_assert(SPINAtom,sp:object,Class),
+		rdf_create_bnode(PathExpr),
+		rdf_assert(SPINAtom,sp:path,PathExpr),
+		rdf_global_id(sp:'SeqPath',ExprURI2),
+		rdf_assert(PathExpr,rdf:type,ExprURI2),
+		rdf_assert(PathExpr,sp:path1,rdf:type),
+		rdf_create_bnode(PathExpr1),
+		rdf_assert(PathExpr,sp:path2,PathExpr1),
+		rdf_global_id(sp:'ModPath',ExprURI3),
+		rdf_assert(PathExpr1,rdf:type,ExprURI3),
+		rdf_assert(PathExpr1,sp:modMax,-2),
+		rdf_assert(PathExpr1,sp:modMin,0),
+		rdf_assert(PathExpr1,sp:subPath,rdfs:subClassOf).
 translate_atom(_Mode,Atom,This,SPINAtom,[TrArg1,Property,TrArg2,'.']) :-
 	rdf(Atom,rdf:type,swrl:'IndividualPropertyAtom'), !,
 	rdf(Atom,swrl:propertyPredicate,Property),
@@ -382,39 +412,39 @@ translate_atom(_Mode,Atom,This,SPINAtom,TrBuiltIn) :-
 	atom_concat(SWRLB_ns,Function,SWRLB),
 	translate_built_in(Function,This,PrologArgumentList,SPINAtom,TrBuiltIn).
 
-translate_built_in(SWRL_builtin,This,[Arg1,Arg2],SPINAtom,[TrExpr] ) :- 
+translate_built_in(SWRL_builtin,This,[Arg1,Arg2],SPINAtom,[TrExpr] ) :-
 	binary_filter_builtin(SWRL_builtin,SPIN_builtin,SPARQL_operator), !,
 	tr_binary_Math_expression(SPIN_builtin,SPARQL_operator,This,[Arg1,Arg2],SPINExpr,TrArgs),
 	tr_filter_expression(SPINExpr,TrArgs,SPINAtom,TrExpr).
-translate_built_in(SWRL_builtin,This,[Arg1,Arg2,Arg3],SPINAtom,[TrExpr] ) :- 
+translate_built_in(SWRL_builtin,This,[Arg1,Arg2,Arg3],SPINAtom,[TrExpr] ) :-
 	binary_infix_assign_builtin(SWRL_builtin,SPIN_builtin,SPARQL_operator), !,
 	tr_binary_assign_Math_expression(SPIN_builtin,SPARQL_operator,This,Arg1,[Arg2,Arg3],SPINAtom,TrExpr).
-translate_built_in(SWRL_builtin,This,[Arg1|Args],SPINAtom,[TrExpr] ) :- 
+translate_built_in(SWRL_builtin,This,[Arg1|Args],SPINAtom,[TrExpr] ) :-
 	associative_infix_assign_builtin(SWRL_builtin,SPIN_builtin,SPARQL_operator), !,
 	tr_associative_assign_Math_expression(SPIN_builtin,SPARQL_operator,This,Arg1,Args,SPINAtom,TrExpr).
-translate_built_in(SWRL_builtin,This,[Arg1,Arg2],SPINAtom,[TrExpr] ) :- 
+translate_built_in(SWRL_builtin,This,[Arg1,Arg2],SPINAtom,[TrExpr] ) :-
 	unary_assign_builtin(SWRL_builtin,SPIN_builtin,SPARQL_operator), !,
 	tr_unary_assign_math_expression(SPIN_builtin,SPARQL_operator,This,Arg1,Arg2,SPINAtom,TrExpr).
-translate_built_in(SWRL_builtin,This,[Arg1|Args],SPINAtom,[TrExpr] ) :- 
+translate_built_in(SWRL_builtin,This,[Arg1|Args],SPINAtom,[TrExpr] ) :-
 	assign_function_builtin(SWRL_builtin,SPIN_builtin), !,
 	tr_function_expression(SPIN_builtin,This,Args,SPINExpr1,TrArgs1),
 	tr_bind_expression(Arg1,This,SPINExpr1,TrArgs1,SPINAtom,TrExpr).
-translate_built_in(SWRL_builtin,This,Args,SPINAtom,[TrExpr] ) :- 
+translate_built_in(SWRL_builtin,This,Args,SPINAtom,[TrExpr] ) :-
 	filter_function_builtin(SWRL_builtin,SPIN_builtin), !,
 	tr_function_expression(SPIN_builtin,This,Args,SPINExpr,TrArgs),
 	tr_filter_expression(SPINExpr,TrArgs,SPINAtom,TrExpr).
-translate_built_in(SWRL_builtin,This,[Arg1|Args],SPINAtom,[TrExpr] ) :- 
+translate_built_in(SWRL_builtin,This,[Arg1|Args],SPINAtom,[TrExpr] ) :-
 	complex_assign_builtin(SWRL_builtin), !,
 	tr_complex_expression(SWRL_builtin,This,Args,SPINExpr1,TrArgs1),
 	tr_bind_expression(Arg1,This,SPINExpr1,TrArgs1,SPINAtom,TrExpr).
-translate_built_in(SWRL_builtin,This,Args,SPINAtom,[TrExpr] ) :- 
+translate_built_in(SWRL_builtin,This,Args,SPINAtom,[TrExpr] ) :-
 	complex_filter_builtin(SWRL_builtin), !,
 	tr_complex_expression(SWRL_builtin,This,Args,SPINExpr,TrArgs),
 	tr_filter_expression(SPINExpr,TrArgs,SPINAtom,TrExpr).
-translate_built_in(SWRL_builtin,This,Args,SPINExpr,[TrArgs] ) :- 
+translate_built_in(SWRL_builtin,This,Args,SPINExpr,[TrArgs] ) :-
 	complex_expr_builtin(SWRL_builtin), !,
 	tr_complex_expression(SWRL_builtin,This,Args,SPINExpr,TrArgs).
-translate_built_in(SWRL_builtin,This,Args,SPINExpr,[TrArgs] ) :- 
+translate_built_in(SWRL_builtin,This,Args,SPINExpr,[TrArgs] ) :-
 	magic_property_builtin(SWRL_builtin,SPINMagicProperty), !,
 	tr_magic_property_expression(SPINMagicProperty,This,Args,SPINExpr,TrArgs).
 
@@ -453,7 +483,7 @@ filter_function_builtin(endsWith,sp:strends).
 filter_function_builtin(startsWith,sp:strstarts).
 filter_function_builtin(contains,sp:contains).
 filter_function_builtin(matches,sp:regex).
- 
+
 complex_assign_builtin(integerDivide).
 % complex_assign_builtin(mod).   % There is a direct translation to spif:mod
 complex_assign_builtin(pow).
@@ -627,7 +657,7 @@ tr_binary_assign_Math_expression(Expression,Operator,This,Arg1,[Arg2,Arg3],SPINA
 	tr_bind_expression(Arg1,This,SPINExpr,TrArgs,SPINAtom,TrExpr).
 
 tr_associative_assign_Math_expression(Expression,Operator,This,Arg1,Args,SPINAtom,TrExpr) :-
-	tr_associative_Math_expression(Expression,Operator,This,Args,SPINExpr,TrArgs), 
+	tr_associative_Math_expression(Expression,Operator,This,Args,SPINExpr,TrArgs),
 	tr_bind_expression(Arg1,This,SPINExpr,TrArgs,SPINAtom,TrExpr).
 
 tr_unary_assign_math_expression(Expression,Operator,This,Arg1,Arg2,SPINAtom,TrExpr) :-
@@ -663,7 +693,7 @@ tr_multi_binary_Math_expression(sp:mul,'*',This,Arg,1,SPINArg,TrArg) :- !,
 	translate_argument(Arg,This,SPINArg,TrArg).
 tr_multi_binary_Math_expression(sp:mul,'*',This,Arg,2,SPINExpr,TrArgs) :- !,
 	tr_binary_Math_expression(sp:mul,'*',This,[Arg,Arg],SPINExpr,TrArgs).
-tr_multi_binary_Math_expression(sp:mul,'*',This,Arg,N,SPINExpr,TrArgs) :- 
+tr_multi_binary_Math_expression(sp:mul,'*',This,Arg,N,SPINExpr,TrArgs) :-
 	N > 2, !,
 	N1 is N - 1,
 	tr_multi_binary_Math_expression(sp:mul,'*',This,Arg,N1,SPINExpr1,TrArgs1),
@@ -710,7 +740,7 @@ tr_magic_property_expression(spif:split,This,[Arg1,Arg2,Arg3],[SPINExpr1,SPINExp
 	rdf_assert(SPINExpr5,sp:subject,SPINVar6),
 	rdf_assert(SPINExpr5,sp:predicate,rdf:rest),
 	rdf_assert(SPINExpr5,sp:object,rdf:nil),
-	%rdf_assert_list([SPINExpr1,SPINExpr2,SPINExpr3,SPINExpr4,SPINExpr5],SPINExpr),	
+	%rdf_assert_list([SPINExpr1,SPINExpr2,SPINExpr3,SPINExpr4,SPINExpr5],SPINExpr),
 	atomic_list_concat([TrArg1,'spif:split','(',TrArg2,TrArg3,')','.'],' ',TrArgs).
 
 
@@ -755,7 +785,7 @@ translate_argument(Arg,_This,Arg,TrArg) :-
 	rdf(Class,rdf:type,owl:'Class'), !,
 	rdf_global_id(Arg1,Arg),
 	term_to_atom(Arg1,TrArg).
-	
+
 discover_var_name(Arg,Var) :-
 	rdf(A,rdf:type,owl:'Ontology'),
 	atom_concat(A,HashVar,Arg), !,
@@ -763,7 +793,7 @@ discover_var_name(Arg,Var) :-
 discover_var_name(Arg,Var) :-
 	tokenize_atom(Arg,List),
 	last(List,Var).
-	
+
 create_var(Var,SPINVar,TrArgVar) :-
 	rdf_create_bnode(SPINVar),
 	atom_string(Var,StrVar),
@@ -781,7 +811,7 @@ delete_all_triples([S-P-O|Tail]) :-
 	rdf_retractall(S, P, O),
 	delete_all_triples(Tail).
 
-% return all triples that originate from node  
+% return all triples that originate from node
 rdf_tree(Node,Prefix,Triples) :-
 	rdf_tree_aux(Prefix,[Node],[],Triples1),
 	reverse(Triples1,Triples).
@@ -791,9 +821,9 @@ rdf_tree_aux(Prefix,[Node|Rest],TempTriples,Triples) :-
 	rdf_current_prefix(Prefix,NS),
 	mysetof(Node-Pred-Obj,(rdf(Node,Pred,Obj), \+ member(Node-Pred-Obj, TempTriples)),NewTriples),
 	mysetof(NewNode, Length^After^Class^Pred^(
-			      member(Node-Pred-NewNode,NewTriples), 
+			      member(Node-Pred-NewNode,NewTriples),
 			      \+ rdf_is_literal(NewNode),
-			      ((rdf(NewNode,rdf:type,Class), sub_string(Class, 0, Length, After, NS)); 
+			      ((rdf(NewNode,rdf:type,Class), sub_string(Class, 0, Length, After, NS));
 			      rdf_is_bnode(NewNode))
 		         ),
 		NewNodes),
@@ -840,7 +870,7 @@ writelist([]).
 writelist([H|T]) :-
 	write(H), nl,
 	writelist(T).
-	
+
 my_subtract([],_,[]).
 my_subtract([H|T],RankedTriples,Diff) :-
 	member(_-H,RankedTriples), !,
@@ -854,7 +884,7 @@ remove_duplicates([H|T],T1) :-
 	remove_duplicates(T,T1).
 remove_duplicates([H|T],[H|T1]) :-
 	remove_duplicates(T,T1).
-	
+
 
 %:- trace, swrl2spin('univ-with-SWRL.owl').
 
