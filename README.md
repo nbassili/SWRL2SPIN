@@ -57,5 +57,9 @@ example use:
 
 ?-  swrl2spin('university1.owl',[subclass(true)]).
 
+Documentation
+-------------
+See technical report 	arXiv:1801.09061 [cs.AI] (https://arxiv.org/abs/1801.09061)
+
 ---------------------
 For any questions and comments please send an email to Nick Bassiliades at: nbassili@csd.auth.gr
