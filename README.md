@@ -60,6 +60,7 @@ example use:
 Documentation
 -------------
 See technical report 	arXiv:1801.09061 [cs.AI] (https://arxiv.org/abs/1801.09061)
+
 See short presentation (http://intelligence.csd.auth.gr/files/SWRL2SPIN.pptx)
 
 ---------------------
