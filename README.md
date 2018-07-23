@@ -63,5 +63,7 @@ example use:
 
 * [Short PowerPoint presentation](http://intelligence.csd.auth.gr/files/SWRL2SPIN.pptx)
 
+* [SWRL2SPIN support for SWRL built-ins](http://intelligence.csd.auth.gr/files/SWRL2SPIN-builtins.pdf)
+
 ---------------------
 For any questions and comments please send an email to Nick Bassiliades at: nbassili@csd.auth.gr
