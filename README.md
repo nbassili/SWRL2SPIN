@@ -17,8 +17,9 @@ into consideration the object-oriented scent of SPIN, i.e. linking rules to the 
 
 You must install SWI-Prolog from http://www.swi-prolog.org/
 We have tested with the latest stable versions 7.6.4 for Windows (both 32-bit and 64-bit).
+Then just place all files of the SWRL2SPIN into a folder.
 
-## RUN
+## RUN within the Prolog environment
 
 Double-click `swrl2spin.pl` from windows explorer or load SWI-Prolog and consult this file.
 Then use at the Prolog prompt:
@@ -38,7 +39,29 @@ Thus for the previous example the following file will be generated:
 
     OUT-university1.owl
 
-To test the SPIN rules in TopBraid we must do the following steps:
+## RUN from Windows Command Line
+
+Open cmd.exe and change directory to the folder where the SWRL2SPIN distribution files have been copied.
+At the command line type:
+
+    > swrl2spin.bat <<"Ontology File">>
+
+to translate the ontology that contains SWRL rules into an ontology with SPIN rules.
+
+E.g. you can use the three sample files provided:
+
+    > swrl2spin.bat university1.owl
+
+The output is saved into the same directory with the name
+`OUT-<Ontology File>`
+
+Thus for the previous example the following file will be generated:
+
+    OUT-university1.owl
+
+## TEST SPIN rules
+
+To test the SPIN rules in TopBraid you must do the following steps:
 1) Rename the file to `OUT-university1.rdf`
 2) Load the file from TopBraid and manually import the `spif.ttl` ontology from the library.
 
@@ -56,6 +79,10 @@ In this way, `owl:subClassOf` reasoning is performed and there is no need to use
 example use:
 
     ?-  swrl2spin('university1.owl',[subclass(true)]).
+
+From the command line, you can place the options right after the ontology file, e.g.:
+
+    > swrl2spin.bat university1.owl subclass(true)
 
 ## Documentation
 
