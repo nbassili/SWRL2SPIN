@@ -4,14 +4,9 @@
 by Dr. Nick Bassiliades, Associate Professor
 Department of Informatics, Aristotle University of Thessaloniki, Greece
 ----------------------------------------------------------------------------------------------------------------
-SWRL is a semantic web rule language that combines OWL ontologies with Horn Logic rules of the RuleML family of rule languages, extending the set of OWL axioms to include Horn-like rules. Being supported by the
-Protégé ontology editor as well as by popular rule engines and ontology reasoners, such as Jess, Drools and Pellet, SWRL has become a very popular choice for developing rule-based applications on top of
-ontologies. However, SWRL being around for more than 10 years now, it is most probable that it will never become a W3C standard; therefore, its scope is difficult to reach out to the industrial world. On the
-other hand, SPIN has become a de-facto industry standard to represent SPARQL rules and constraints on Semantic Web models, building on the widespread acceptance of the SPARQL query language for querying and
-processing Linked Open Data. In this paper, we argue that the life of existing SWRL rule-based ontology applications can be prolonged by being transformed into SPIN.
+SWRL is a semantic web rule language that combines OWL ontologies with Horn Logic rules of the RuleML family of rule languages, extending the set of OWL axioms to include Horn-like rules. Being supported by the Protégé ontology editor as well as by popular rule engines and ontology reasoners, such as Jess, Drools and Pellet, SWRL has become a very popular choice for developing rule-based applications on top of ontologies. However, SWRL being around for more than 10 years now, it is most probable that it will never become a W3C standard; therefore, its scope is difficult to reach out to the industrial world. On the other hand, SPIN has become a de-facto industry standard to represent SPARQL rules and constraints on Semantic Web models, building on the widespread acceptance of the SPARQL query language for querying and processing Linked Open Data. In this paper, we argue that the life of existing SWRL rule-based ontology applications can be prolonged by being transformed into SPIN.
 
-To this end, we have developed a prototype tool, called SWRL2SPIN using SWI-Prolog that takes as in-put an OWL ontology with a SWRL rule base and transforms SWRL rules into SPIN rules in the same ontology, taking
-into consideration the object-oriented scent of SPIN, i.e. linking rules to the appropriate ontology classes as derived by analyzing the rule conditions. Furthermore, we have optimized the generated SPIN rules.
+To this end, we have developed a prototype tool, called SWRL2SPIN using SWI-Prolog that takes as in-put an OWL ontology with a SWRL rule base and transforms SWRL rules into SPIN rules in the same ontology, taking into consideration the object-oriented scent of SPIN, i.e. linking rules to the appropriate ontology classes as derived by analyzing the rule conditions. Furthermore, we have optimized the generated SPIN rules.
 
 ## INSTALLATION
 
@@ -91,6 +86,10 @@ From the command line, you can place the options right after the ontology file, 
 * [Short PowerPoint presentation](http://intelligence.csd.auth.gr/files/SWRL2SPIN.pptx)
 
 * [SWRL2SPIN support for SWRL built-ins](http://intelligence.csd.auth.gr/files/SWRL2SPIN-builtins.pdf)
+
+## Sister projects
+
+[SWRL2SHACL](https://github.com/nbassili/SWRL2SHACL)
 
 ---------------------
 For any questions and comments please send an email to Nick Bassiliades at: nbassili@csd.auth.gr
