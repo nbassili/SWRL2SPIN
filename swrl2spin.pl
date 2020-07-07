@@ -43,15 +43,6 @@ swrl2spin(OntoFile,N,Options) :-
 	assert_options(Options),
 	rdf_reset_db,
 	rdf_load(OntoFile,[register_namespaces(true)]),
-	rdf(OntoURI,rdf:type,owl:'Ontology'),
-	rdf_assert(OntoURI,owl:imports,'http://spinrdf.org/spif'),
-	rdf_assert(OntoURI,owl:imports,'http://spinrdf.org/spin'),
-	rdf_assert(OntoURI,owl:imports,'http://spinrdf.org/sp'),
-	rdf_assert(OntoURI,owl:imports,'http://spinrdf.org/spl'),
-	atom_concat(OntoURI,'#',OntoNS),
-	( rdf_current_prefix(_OntoPrefix,OntoNS) ->
-		true;
-		rdf_register_prefix(ns1, OntoNS)),  % This is a hack
 	findall(R, rdf(R,rdf:type,swrl:'Imp'), Rules),
 	multiply_rules(Rules,N,RulesN),
 	% Uncomment the line below (and comment the one right after) to measure total rule translation time
@@ -60,6 +51,11 @@ swrl2spin(OntoFile,N,Options) :-
 	delete_swrl_rules(RulesN),
 	%writelist(SPINRules), nl,
 	%writelist(TrRules),
+	rdf(OntoURI,rdf:type,owl:'Ontology'),
+	rdf_assert(OntoURI,owl:imports,'http://spinrdf.org/spif'),
+	rdf_assert(OntoURI,owl:imports,'http://spinrdf.org/spin'),
+	rdf_assert(OntoURI,owl:imports,'http://spinrdf.org/sp'),
+	rdf_assert(OntoURI,owl:imports,'http://spinrdf.org/spl'),
 	atom_concat('OUT-',OntoFile,OutOntoFile),
 	rdf_save(OutOntoFile,[]),
 	retract_options.
@@ -331,11 +327,10 @@ BuiltinAtom
 translate_atom(body,Atom,This,[],[]) :-
 	rdf(Atom,rdf:type,swrl:'ClassAtom'),
 	rdf(Atom,swrl:argument1,This), !.
-translate_atom(Mode,Atom,This,SPINAtom,[TrArg,a,Class1,'.']) :-
+translate_atom(Mode,Atom,This,SPINAtom,[TrArg,a,Class,'.']) :-
 	rdf(Atom,rdf:type,swrl:'ClassAtom'),
 	(Mode = head ; (Mode = body, not(option(subclass,true)))),	!,
 	rdf(Atom,swrl:classPredicate,Class),
-	shorten_uri(Class,Class1),
 	rdf(Atom,swrl:argument1,Arg),
 	translate_argument(Arg,This,SPINArg,TrArg),
 	rdf_create_bnode(SPINAtom),
@@ -344,33 +339,31 @@ translate_atom(Mode,Atom,This,SPINAtom,[TrArg,a,Class1,'.']) :-
 	rdf_assert(SPINAtom,sp:object,Class).
 % Optionally translate classAtom to rdf:type/(rdfs:subClassOf)* in order to avoid using reasoner
 % Use subclass(true) in the options
-translate_atom(body,Atom,This,SPINAtom,[TrArg,'rdf:type/(rdfs:subClassOf)*',Class1,'.']) :-
-	rdf(Atom,rdf:type,swrl:'ClassAtom'), !,
-	rdf(Atom,swrl:classPredicate,Class),
-	shorten_uri(Class,Class1),
-	rdf(Atom,swrl:argument1,Arg),
-	translate_argument(Arg,This,SPINArg,TrArg),
-	rdf_create_bnode(SPINAtom),
-	rdf_global_id(sp:'TriplePath',ExprURI1),
-	rdf_assert(SPINAtom,rdf:type,ExprURI1),
-	rdf_assert(SPINAtom,sp:subject,SPINArg),
-	rdf_assert(SPINAtom,sp:object,Class),
-	rdf_create_bnode(PathExpr),
-	rdf_assert(SPINAtom,sp:path,PathExpr),
-	rdf_global_id(sp:'SeqPath',ExprURI2),
-	rdf_assert(PathExpr,rdf:type,ExprURI2),
-	rdf_assert(PathExpr,sp:path1,rdf:type),
-	rdf_create_bnode(PathExpr1),
-	rdf_assert(PathExpr,sp:path2,PathExpr1),
-	rdf_global_id(sp:'ModPath',ExprURI3),
-	rdf_assert(PathExpr1,rdf:type,ExprURI3),
-	rdf_assert(PathExpr1,sp:modMax,-2),
-	rdf_assert(PathExpr1,sp:modMin,0),
-	rdf_assert(PathExpr1,sp:subPath,rdfs:subClassOf).
-translate_atom(_Mode,Atom,This,SPINAtom,[TrArg1,Property1,TrArg2,'.']) :-
+translate_atom(body,Atom,This,SPINAtom,[TrArg,'rdf:type/(rdfs:subClassOf)*',Class,'.']) :-
+		rdf(Atom,rdf:type,swrl:'ClassAtom'), !,
+		rdf(Atom,swrl:classPredicate,Class),
+		rdf(Atom,swrl:argument1,Arg),
+		translate_argument(Arg,This,SPINArg,TrArg),
+		rdf_create_bnode(SPINAtom),
+		rdf_global_id(sp:'TriplePath',ExprURI1),
+		rdf_assert(SPINAtom,rdf:type,ExprURI1),
+		rdf_assert(SPINAtom,sp:subject,SPINArg),
+		rdf_assert(SPINAtom,sp:object,Class),
+		rdf_create_bnode(PathExpr),
+		rdf_assert(SPINAtom,sp:path,PathExpr),
+		rdf_global_id(sp:'SeqPath',ExprURI2),
+		rdf_assert(PathExpr,rdf:type,ExprURI2),
+		rdf_assert(PathExpr,sp:path1,rdf:type),
+		rdf_create_bnode(PathExpr1),
+		rdf_assert(PathExpr,sp:path2,PathExpr1),
+		rdf_global_id(sp:'ModPath',ExprURI3),
+		rdf_assert(PathExpr1,rdf:type,ExprURI3),
+		rdf_assert(PathExpr1,sp:modMax,-2),
+		rdf_assert(PathExpr1,sp:modMin,0),
+		rdf_assert(PathExpr1,sp:subPath,rdfs:subClassOf).
+translate_atom(_Mode,Atom,This,SPINAtom,[TrArg1,Property,TrArg2,'.']) :-
 	rdf(Atom,rdf:type,swrl:'IndividualPropertyAtom'), !,
 	rdf(Atom,swrl:propertyPredicate,Property),
-	shorten_uri(Property,Property1),
 	rdf(Atom,swrl:argument1,Arg1),
 	rdf(Atom,swrl:argument2,Arg2),
 	translate_argument(Arg1,This,SPINArg1,TrArg1),
@@ -399,10 +392,9 @@ translate_atom(_Mode,Atom,This,SPINAtom,[TrArg1,'owl:differentFrom',TrArg2,'.'])
 	rdf_assert(SPINAtom,sp:subject,SPINArg1),
 	rdf_assert(SPINAtom,sp:predicate,owl:differentFrom),
 	rdf_assert(SPINAtom,sp:object,SPINArg2).
-translate_atom(_Mode,Atom,This,SPINAtom,[TrArg1,Property1,TrArg2,'.']) :-
+translate_atom(_Mode,Atom,This,SPINAtom,[TrArg1,Property,TrArg2,'.']) :-
 	rdf(Atom,rdf:type,swrl:'DatavaluedPropertyAtom'), !,
 	rdf(Atom,swrl:propertyPredicate,Property),
-	shorten_uri(Property,Property1),
 	rdf(Atom,swrl:argument1,Arg1),
 	rdf(Atom,swrl:argument2,Arg2),
 	translate_argument(Arg1,This,SPINArg1,TrArg1),
@@ -525,8 +517,7 @@ tr_complex_expression(mod,This,[Arg1,Arg2],SPINExpr3,TrArgs3) :- !,
 	tr_binary_Math_expression(SPIN_sub,OpSub,This,[Arg1,SPINExpr2-TrArgs2],SPINExpr3,TrArgs3).
 */
 tr_complex_expression(pow,This,[Arg1,Arg2],SPINExpr,TrArgs) :- !,
-	(Arg2=Arg2Value^^'http://www.w3.org/2001/XMLSchema#int';
-	 Arg2=Arg2Value^^'http://www.w3.org/2001/XMLSchema#integer'),
+	Arg2=Arg2Value^^'http://www.w3.org/2001/XMLSchema#int',
 	tr_multi_binary_Math_expression(sp:mul,'*',This,Arg1,Arg2Value,SPINExpr,TrArgs).
 tr_complex_expression(containsIgnoreCase,This,[Arg1,Arg2],SPINExpr,TrArgs) :- !,
 	tr_function_expression(sp:lcase,This,[Arg1],SPINExpr1,TrArgs1),
@@ -539,9 +530,9 @@ tr_complex_expression(stringEqualIgnoreCase,This,[Arg1,Arg2],SPINExpr,TrArgs) :-
 tr_complex_expression(normalizeSpace,This,[Arg2],SPINExpr,TrArgs) :- !,
 %%%   (REPLACE(REPLACE(REPLACE(?y, "\\s+", " "), "^\\s+", ""), "\\s+$", "")
 	rdf_global_id(xsd:string,StringURI),
-	tr_function_expression(sp:replace,This,[Arg2,'\"\\s+\"'^^StringURI, '\" \"'^^StringURI],SPINExpr1,TrArgs1),
-	tr_function_expression(sp:replace,This,[SPINExpr1-TrArgs1,'\"^\\s+\"'^^StringURI, '\"\"'^^StringURI],SPINExpr2,TrArgs2),
-	tr_function_expression(sp:replace,This,[SPINExpr2-TrArgs2,'\"\\s+$\"'^^StringURI, '\"\"'^^StringURI],SPINExpr,TrArgs).
+	tr_function_expression(sp:replace,This,[Arg2,'\\s+'^^StringURI, ' '^^StringURI],SPINExpr1,TrArgs1),
+	tr_function_expression(sp:replace,This,[SPINExpr1-TrArgs1,'^\\s+'^^StringURI, ''^^StringURI],SPINExpr2,TrArgs2),
+	tr_function_expression(sp:replace,This,[SPINExpr2-TrArgs2,'\\s+$'^^StringURI, ''^^StringURI],SPINExpr,TrArgs).
 tr_complex_expression(date,This,[YearArg,MonthArg,DayArg],SPINExpr,TrArgs) :- !,
 	translate_argument(YearArg,This,SPINYearArg,YearTrArg),
 	translate_argument(MonthArg,This,SPINMonthArg,MonthTrArg),
@@ -550,7 +541,7 @@ tr_complex_expression(date,This,[YearArg,MonthArg,DayArg],SPINExpr,TrArgs) :- !,
 	tr_cast_expression(SPINMonthArg,MonthTrArg,xsd:string,SPINMonthArg1,MonthTrArg1),
 	tr_cast_expression(SPINDayArg,DayTrArg,xsd:string,SPINDayArg1,DayTrArg1),
 	rdf_global_id(xsd:string,StringURI),
-	tr_function_expression(sp:concat,This,[SPINYearArg1-YearTrArg1,'\"-\"'^^StringURI,SPINMonthArg1-MonthTrArg1,'\"-\"'^^StringURI,SPINDayArg1-DayTrArg1],SPINExpr1,TrArgs1),
+	tr_function_expression(sp:concat,This,[SPINYearArg1-YearTrArg1,'-'^^StringURI,SPINMonthArg1-MonthTrArg1,'-'^^StringURI,SPINDayArg1-DayTrArg1],SPINExpr1,TrArgs1),
 	tr_cast_expression(SPINExpr1,TrArgs1,xsd:date,SPINExpr,TrArgs).
 tr_complex_expression(empty,This,[Arg1],SPINExpr,TrArgs) :- !,
 	tr_binary_Math_expression(sp:eq,'=',This,[Arg1,rdf:nil],SPINExpr,TrArgs).
@@ -797,8 +788,12 @@ translate_argument(Arg,_This,Arg,TrArg) :-
 
 discover_var_name(Arg,Var) :-
 	rdf(A,rdf:type,owl:'Ontology'),
-	atom_concat(A,HashVar,Arg), !,
-	atom_concat('#',Var,HashVar).
+	atom_concat(A,'#',_),
+	atom_concat(A,Var,Arg), !.
+discover_var_name(Arg,Var) :-
+		rdf(A,rdf:type,owl:'Ontology'),
+		atom_concat(A,HashVar,Arg), !,
+		atom_concat('#',Var,HashVar).
 discover_var_name(Arg,Var) :-
 	tokenize_atom(Arg,List),
 	last(List,Var).
@@ -808,13 +803,6 @@ create_var(Var,SPINVar,TrArgVar) :-
 	atom_string(Var,StrVar),
 	rdf_assert(SPINVar,sp:varName,StrVar),
 	atom_concat('?',Var,TrArgVar).
-
-% Utility predicate
-% Given a full URI it returns a proper atom for its short URI
-shorten_uri(FullURI,ShortURIAtom) :-
-	rdf_global_id(ShortURITerm,FullURI),
-	term_string(ShortURITerm,ShortURIStr,[quoted(false)]),
-	atom_string(ShortURIAtom,ShortURIStr).
 
 delete_swrl_rules([]).
 delete_swrl_rules([R|T]) :-
